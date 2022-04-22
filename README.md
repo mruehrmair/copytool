@@ -6,5 +6,5 @@ A simple command line tool to copy file directories
 
 >copytool [FolderA] [FolderB]
 
--all sub folders are copied
--by default all files are replaced at the destination
+- all sub folders are copied
+- by default all files are replaced at the destination
