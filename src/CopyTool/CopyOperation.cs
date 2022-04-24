@@ -19,10 +19,9 @@ public class CopyOperation : ICopyOperation
     }
 
 
-    public async Task<bool> FolderCopy(string source, string destination)
+    public async Task<bool> FileCopy(string source, string destination)
     {
-
-        throw new NotImplementedException();
-
+        await Task.Run(() => _fileSystem.File.Copy(source, destination, true));
+        return true;       
     }
 }
