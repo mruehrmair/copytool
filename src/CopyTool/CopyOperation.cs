@@ -24,4 +24,29 @@ public class CopyOperation : ICopyOperation
         await Task.Run(() => _fileSystem.File.Copy(source, destination, true));
         return true;       
     }
+
+    public async Task<bool> FolderCopy(string source, string destination)
+    {
+        await CopyFilesRecursively(source, destination);
+        return true;
+    }
+
+    private async Task CopyFilesRecursively(string sourcePath, string targetPath)
+    {
+        _ = _fileSystem.Directory.CreateDirectory(targetPath);
+        //Now Create all of the directories
+        foreach (string dirPath in _fileSystem.Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
+        {
+            string? newDir = dirPath.Replace(sourcePath, targetPath);
+            _ = _fileSystem.Directory.CreateDirectory(newDir);
+        }
+
+        //Copy all the files & Replaces any files with the same name
+        foreach (string newPath in _fileSystem.Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
+        {
+            string? src = newPath;
+            string? dest = newPath.Replace(sourcePath, targetPath);
+            await FileCopy(src, dest);
+        }
+    }
 }

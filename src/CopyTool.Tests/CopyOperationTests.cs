@@ -5,17 +5,19 @@ using Xunit;
 
 namespace CopyTool.Tests;
 
-public class FolderCopyTests
+public class CopyOperationTests
 {
     private readonly CopyOperation _sut;
     private readonly MockFileSystem _fileSystem;
 
-    public FolderCopyTests()
+    public CopyOperationTests()
     {
         const string file1 = @"c:\testfolder\testfile1.txt";
+        const string folder1 = @"c:\testfolder";
 
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
+            { @$"{folder1}", new MockDirectoryData() },
             { @$"{file1}", new MockFileData("Testing is meh.") },
             { @"c:\myfile.txt", new MockFileData("Testing is meh.") },
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
@@ -25,7 +27,7 @@ public class FolderCopyTests
     }
 
     [Fact]
-    public async void FileCopy_TwoFolders_CopyOk()
+    public async void FileCopy_TwoFiles_CopyOk()
     {
         //given
         const string testFileSrc = @"c:\testfolder\testfile1.txt";
@@ -33,8 +35,23 @@ public class FolderCopyTests
         //when
         await _sut.FileCopy(testFileSrc, testFileDest);
         //then
-        var expectedFile = @"c:\testfolder\testfileCopy.txt";       
+        var expectedFile = testFileDest;       
         _fileSystem.FileExists(expectedFile).Should().Be(true);
+
+    }
+
+    [Fact]
+    public async void FolderCopy_TwoFolders_CopyOk()
+    {
+        //given
+        const string testFolderSrc = @"c:\testfolder\";
+        const string testFolderDest = @"c:\testfolder1\";
+
+        //when
+        await _sut.FolderCopy(testFolderSrc, testFolderDest);
+        //then
+        string? expectedFolder = testFolderDest;
+        _fileSystem.FileExists(expectedFolder).Should().Be(true);
 
     }
 }
