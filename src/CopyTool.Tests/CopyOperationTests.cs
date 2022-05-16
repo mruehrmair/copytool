@@ -9,16 +9,18 @@ public class CopyOperationTests
 {
     private readonly CopyOperation _sut;
     private readonly MockFileSystem _fileSystem;
+    private const string _file1 = @"c:\testfolder\testfile1.txt";
+    private const string _file2 = @"c:\testfolder\testfileCopy.txt";
+    private const string _file3 = @"c:\testfolder\testfileCopy3.txt";
+    private const string _folder1 = @"c:\testfolder";
 
     public CopyOperationTests()
     {
-        const string file1 = @"c:\testfolder\testfile1.txt";
-        const string folder1 = @"c:\testfolder";
-
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            { @$"{folder1}", new MockDirectoryData() },
-            { @$"{file1}", new MockFileData("Testing is meh.") },
+            { @$"{_folder1}", new MockDirectoryData() },
+            { @$"{_file1}", new MockFileData("Testing is meh.") },
+            { @$"{_file3}", new MockFileData("Testing is meh.") },
             { @"c:\myfile.txt", new MockFileData("Testing is meh.") },
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
             { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
@@ -30,14 +32,31 @@ public class CopyOperationTests
     public async void FileCopy_TwoFiles_CopyOk()
     {
         //given
-        const string testFileSrc = @"c:\testfolder\testfile1.txt";
-        const string testFileDest = @"c:\testfolder\testfileCopy.txt";
+        var testFileSrc = _file1;
+        var testFileDest = _file2;
         //when
         await _sut.FileCopy(testFileSrc, testFileDest);
         //then
         var expectedFile = testFileDest;       
         _fileSystem.FileExists(expectedFile).Should().Be(true);
 
+    }
+
+    [Fact]
+    public async void FileCopy_DestinationReadOnly_ThrowsException()
+    {
+        //given
+        var testFileSrc = _file1;
+        var testFileDest = _file3;
+
+        var expectedFile = testFileDest;
+        _fileSystem.FileInfo.FromFileName(expectedFile).IsReadOnly = true;
+
+        //when
+        var action = async () => await _sut.FileCopy(testFileSrc, testFileDest);
+
+        //then
+        await action.Should().ThrowAsync<System.UnauthorizedAccessException>();        
     }
 
     [Fact]
