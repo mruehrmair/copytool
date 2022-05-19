@@ -13,15 +13,16 @@ public class CopyOperationTests
     private const string _file2 = @"c:\testfolder\testfileCopy.txt";
     private const string _file3 = @"c:\testfolder\testfileCopy3.txt";
     private const string _folder1 = @"c:\testfolder";
+    private const string _text = "Testing is meh.";
 
     public CopyOperationTests()
     {
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
             { @$"{_folder1}", new MockDirectoryData() },
-            { @$"{_file1}", new MockFileData("Testing is meh.") },
-            { @$"{_file3}", new MockFileData("Testing is meh.") },
-            { @"c:\myfile.txt", new MockFileData("Testing is meh.") },
+            { @$"{_file1}", new MockFileData(_text) },
+            { @$"{_file3}", new MockFileData(_text) },
+            { @"c:\myfile.txt", new MockFileData(_text) },
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
             { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
@@ -40,6 +41,20 @@ public class CopyOperationTests
         var expectedFile = testFileDest;       
         _fileSystem.FileExists(expectedFile).Should().Be(true);
 
+    }
+
+    [Fact]
+    public async void FileRead_Ok()
+    {
+        //given
+        var testFileSrc = _file1;
+
+        //when
+        var text = await _fileSystem.File.ReadAllLinesAsync(testFileSrc);
+
+        //then
+        var expectedText = _text;
+        string.Join("",text).Should().Be(expectedText);
     }
 
     [Fact]
