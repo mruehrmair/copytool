@@ -153,7 +153,7 @@ public class CopyOperationTests
     public async void FolderCopy_JsonContainsNoFolders_NoException()
     {
         //given
-        CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfigNoFoldersToCopy, _jsonOptions); ;
+        CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfigNoFoldersToCopy, _jsonOptions);
 
         //when
         var action = async () => await _sut.FolderCopy(foldersToCopy);
