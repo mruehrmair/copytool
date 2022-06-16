@@ -25,9 +25,25 @@ public class CopyOperation : ICopyOperation
         return true;       
     }
 
-    public async Task<bool> FolderCopy(string source, string destination)
+    public async Task<bool> FolderCopy(CopyFolder copyFolder)
     {
-        await CopyFilesRecursively(source, destination);
+        await CopyFilesRecursively(copyFolder.Source, copyFolder.Destination);
+        return true;
+    }
+
+    public async Task<bool> FolderCopy(CopyFolders? copyFolders)
+    {
+        if (copyFolders is null)
+            throw new ArgumentNullException(nameof(copyFolders));
+
+        if (copyFolders.Folders is not null)
+        {
+            foreach (CopyFolder folderPair in copyFolders.Folders)
+            {
+                await FolderCopy(folderPair);
+            }
+        }
+            
         return true;
     }
 
