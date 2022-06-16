@@ -4,20 +4,17 @@ namespace CopyTool;
 public class CopyOperation : ICopyOperation
 {
     private readonly IFileSystem _fileSystem;
-
-    // <summary>Create MyComponent with the given fileSystem implementation</summary>
+        
     public CopyOperation(IFileSystem fileSystem)
     {
         _fileSystem = fileSystem;
     }
-
-    /// <summary>Create MyComponent</summary>
+        
     public CopyOperation() : this(
-        fileSystem: new FileSystem() //use default implementation which calls System.IO
+        fileSystem: new FileSystem() 
     )
     {
     }
-
 
     public async Task<bool> FileCopy(string source, string destination)
     {
@@ -42,9 +39,23 @@ public class CopyOperation : ICopyOperation
             {
                 await FolderCopy(folderPair);
             }
+            return true;
+        }           
+        return false;
+    }
+
+    public async Task<bool> FolderCopy(string jsonFilePath)
+    {
+        //TODO add DI
+        var reader = new SettingsReader(_fileSystem, jsonFilePath);
+        
+        if (reader is not null)
+        {
+            CopyFolders? settings = reader.Load<CopyFolders>();
+
+           return await FolderCopy(settings);
         }
-            
-        return true;
+        return false;
     }
 
     private async Task CopyFilesRecursively(string sourcePath, string targetPath)

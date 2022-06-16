@@ -15,6 +15,7 @@ public class CopyOperationTests
     private const string _file2 = @"c:\testfolder\testfileCopy.txt";
     private const string _file3 = @"c:\testfolder\testfileCopy3.txt";
     private const string _file4 = @"c:\folder1src\testfileCopy.txt";
+    private const string _settingsFile = @"c:\settings.json";
     private const string _folder1 = @"c:\testfolder";
     private const string _text = "Testing is meh.";
 
@@ -46,7 +47,7 @@ public class CopyOperationTests
             { @"c:\folder2src", new MockDirectoryData()},
             { @"c:\folder3src", new MockDirectoryData()},
             { @$"{_file4}", new MockFileData(_text) },
-            { @"c:\myfile.txt", new MockFileData(_text) },
+            { @$"{_settingsFile}", new MockFileData(_jsonConfig) },
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
             { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
@@ -95,7 +96,7 @@ public class CopyOperationTests
         var action = async () => await _sut.FileCopy(testFileSrc, testFileDest);
 
         //then
-        await action.Should().ThrowAsync<System.UnauthorizedAccessException>();
+        await action.Should().ThrowAsync<UnauthorizedAccessException>();
     }
 
     [Fact]
@@ -122,12 +123,9 @@ public class CopyOperationTests
     [InlineData(@"c:\folder3dest\")]
     public async void FolderCopy_MultipleFoldersInJson_CopyOk(string testFolderDest)
     {
-        //given
-        CopyFolders? foldersToCopy =
-                JsonSerializer.Deserialize<CopyFolders>(_jsonConfig, _jsonOptions);
-
+        //given        
         //when
-        await _sut.FolderCopy(foldersToCopy);
+        await _sut.FolderCopy(_settingsFile);
 
         //then
         string? expectedFolder = testFolderDest;
