@@ -3,36 +3,30 @@ using System.Text.Json;
 
 namespace CopyTool
 {
-    public class SettingsReader
+    public class SettingsReader : ISettingsReader
     {
         private readonly IFileSystem _fileSystem;
-        private readonly string _filePath;
+        
+        public string? FilePath { get; set; }
 
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
         };
 
-        public SettingsReader(IFileSystem fileSystem, string filePath)
+        public SettingsReader(IFileSystem fileSystem)
         {
             _fileSystem = fileSystem;
-            _filePath = filePath;
-        }
-
-        public SettingsReader(string filePath) : this(
-        fileSystem: new FileSystem(), filePath
-        )
-        {
         }
 
         public T? Load<T>() where T : class, new() => Load(typeof(T)) as T;
 
         private object? Load(Type type)
         {
-            if (!_fileSystem.File.Exists(_filePath))
+            if (!_fileSystem.File.Exists(FilePath))
                 return Activator.CreateInstance(type);
 
-            var jsonFile = _fileSystem.File.ReadAllText(_filePath);
+            var jsonFile = _fileSystem.File.ReadAllText(FilePath);
 
             return JsonSerializer.Deserialize(jsonFile, type, _jsonOptions);
         }

@@ -1,24 +1,23 @@
-﻿using System.IO.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+using System.IO.Abstractions;
 
 namespace CopyTool;
 public class CopyOperation : ICopyOperation
 {
     private readonly IFileSystem _fileSystem;
-        
-    public CopyOperation(IFileSystem fileSystem)
+    private readonly ISettingsReader _settingsReader;
+    //private readonly ILogger<CopyOperation>? _logger;
+
+    public CopyOperation(IFileSystem fileSystem, ISettingsReader settingsReader)
     {
         _fileSystem = fileSystem;
+        _settingsReader = settingsReader;
     }
         
-    public CopyOperation() : this(
-        fileSystem: new FileSystem() 
-    )
-    {
-    }
-
     public async Task<bool> FileCopy(string source, string destination)
     {
         await Task.Run(() => _fileSystem.File.Copy(source, destination, true));
+        //_logger?.LogInformation("Copied {source} to {destination}", source, destination);
         return true;       
     }
 
@@ -45,13 +44,11 @@ public class CopyOperation : ICopyOperation
     }
 
     public async Task<bool> FolderCopy(string jsonFilePath)
-    {
-        //TODO add DI
-        var reader = new SettingsReader(_fileSystem, jsonFilePath);
-        
-        if (reader is not null)
+    {      
+        if (_settingsReader is not null)
         {
-            CopyFolders? settings = reader.Load<CopyFolders>();
+            _settingsReader.FilePath = jsonFilePath;
+            CopyFolders? settings = _settingsReader.Load<CopyFolders>();
 
            return await FolderCopy(settings);
         }

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
@@ -11,6 +12,7 @@ public class CopyOperationTests
 {
     private readonly CopyOperation _sut;
     private readonly MockFileSystem _fileSystem;
+    private readonly Mock<ISettingsReader> _settingsReader;
     private const string _file1 = @"c:\testfolder\testfile1.txt";
     private const string _file2 = @"c:\testfolder\testfileCopy.txt";
     private const string _file3 = @"c:\testfolder\testfileCopy3.txt";
@@ -38,6 +40,11 @@ public class CopyOperationTests
 
     public CopyOperationTests()
     {
+        CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfig, _jsonOptions);
+
+        _settingsReader = new Mock<ISettingsReader>();
+        _settingsReader.Setup(x => x.Load<CopyFolders>()).Returns(foldersToCopy);
+
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
             { @$"{_folder1}", new MockDirectoryData() },
@@ -51,7 +58,7 @@ public class CopyOperationTests
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
             { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
-        _sut = new CopyOperation(_fileSystem);
+        _sut = new CopyOperation(_fileSystem, _settingsReader.Object);
     }
 
     [Fact]
@@ -144,20 +151,6 @@ public class CopyOperationTests
 
         //then
         await action.Should().ThrowAsync<ArgumentNullException>();
-
-    }
-
-    [Fact]
-    public async void FolderCopy_JsonContainsNoFolders_NoException()
-    {
-        //given
-        CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfigNoFoldersToCopy, _jsonOptions);
-
-        //when
-        var action = async () => await _sut.FolderCopy(foldersToCopy);
-
-        //then
-        await action.Should().NotThrowAsync<Exception>();
 
     }
 }

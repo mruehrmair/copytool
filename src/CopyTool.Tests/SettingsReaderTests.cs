@@ -35,7 +35,8 @@ public class SettingsReaderTests
             { @$"{_file2}", new MockFileData(_jsonConfigNoFoldersToCopy) }
 
         });
-        _sut = new SettingsReader(_fileSystem, _file1);
+        _sut = new SettingsReader(_fileSystem);
+        _sut.FilePath = _file1;
     }
 
     [Fact]
@@ -56,7 +57,8 @@ public class SettingsReaderTests
     public void Load_EmptyFile_DeserializationOk()
     {
         //given
-        _sut = new SettingsReader(_fileSystem, _file2);
+        _sut = new SettingsReader(_fileSystem);
+        _sut.FilePath = _file2;
 
         //when
         CopyFolders? settings = _sut.Load<CopyFolders>();
