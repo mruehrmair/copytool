@@ -1,5 +1,8 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
+using Serilog;
+using Serilog.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
@@ -8,10 +11,11 @@ using Xunit;
 
 namespace CopyTool.Tests;
 
-public class CopyOperationTests
+public class CopyOperationTests : CopyToolTestsBase
 {
-    private readonly CopyOperation _sut;
     private readonly MockFileSystem _fileSystem;
+
+    private readonly CopyOperation _sut;
     private readonly Mock<ISettingsReader> _settingsReader;
     private const string _file1 = @"c:\testfolder\testfile1.txt";
     private const string _file2 = @"c:\testfolder\testfileCopy.txt";
@@ -20,18 +24,6 @@ public class CopyOperationTests
     private const string _settingsFile = @"c:\settings.json";
     private const string _folder1 = @"c:\testfolder";
     private const string _text = "Testing is meh.";
-
-    private const string _jsonConfig = @"{
-	""folders"": [
-      { ""source"":""c:\\folder1src"", ""destination"": ""c:\\folder1dest"" },
-      { ""source"":""c:\\folder2src"", ""destination"": ""c:\\folder2dest"" },
-      { ""source"":""c:\\folder3src"", ""destination"": ""c:\\folder3dest"" }
-    ]
-    }";
-
-    private const string _jsonConfigNoFoldersToCopy = @"{
-	""folders"": []
-    }";
 
     private JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
     {
@@ -44,7 +36,7 @@ public class CopyOperationTests
 
         _settingsReader = new Mock<ISettingsReader>();
         _settingsReader.Setup(x => x.Load<CopyFolders>()).Returns(foldersToCopy);
-
+        
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
             { @$"{_folder1}", new MockDirectoryData() },
@@ -58,7 +50,12 @@ public class CopyOperationTests
             { @"c:\demo\jQuery.js", new MockFileData("some js") },
             { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
-        _sut = new CopyOperation(_fileSystem, _settingsReader.Object);
+        var logger = Log.Logger = new LoggerConfiguration()
+                .WriteTo.Debug()
+                .CreateLogger();
+        var debugLogger = new SerilogLoggerFactory(logger)
+            .CreateLogger<CopyOperation>();
+        _sut = new CopyOperation(_fileSystem, _settingsReader.Object, debugLogger);
     }
 
     [Fact]
@@ -124,20 +121,20 @@ public class CopyOperationTests
 
     }
 
-    [Theory]
-    [InlineData(@"c:\folder1dest\")]
-    [InlineData(@"c:\folder2dest\")]
-    [InlineData(@"c:\folder3dest\")]
-    public async void FolderCopy_MultipleFoldersInJson_CopyOk(string testFolderDest)
+    [Fact]
+    public async void FolderCopy_MultipleFoldersInJson_CopyOk()
     {
-        //given        
+        //given
+        var expectedFolders = new[] { @"c:\folder1dest\", @"c:\folder2dest\", @"c:\folder3dest\" };
+        
         //when
         await _sut.FolderCopy(_settingsFile);
 
         //then
-        string? expectedFolder = testFolderDest;
-        _fileSystem.FileExists(expectedFolder).Should().Be(true);
-
+        foreach(var expectedFolder in expectedFolders)
+        {
+            _fileSystem.FileExists(expectedFolder).Should().Be(true);
+        }
     }
 
     [Fact]

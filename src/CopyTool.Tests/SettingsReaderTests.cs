@@ -1,32 +1,23 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
 using Xunit;
 
 namespace CopyTool.Tests;
 
-public class SettingsReaderTests
+public class SettingsReaderTests : CopyToolTestsBase
 {
-    private SettingsReader _sut;
     private readonly MockFileSystem _fileSystem;
+
+    private SettingsReader _sut;
+    private readonly Mock<ILogger<SettingsReader>> _logger;
     private const string _file1 = @"c:\testfolder\settings.json";
     private const string _file2 = @"c:\testfolder\settingsEmpty.json";
     private const string _folder1 = @"c:\testfolder";
 
-    private const string _jsonConfig = @"{
-	""folders"": [
-      { ""source"":""c:\\folder1src"", ""destination"": ""c:\\folder1dest"" },
-      { ""source"":""c:\\folder2src"", ""destination"": ""c:\\folder2dest"" },
-      { ""source"":""c:\\folder3src"", ""destination"": ""c:\\folder3dest"" }
-    ]
-    }";
-
-    private const string _jsonConfigNoFoldersToCopy = @"{
-	""folders"": []
-    }";
-        
-
-    public SettingsReaderTests()
+    public SettingsReaderTests() 
     {
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
@@ -35,7 +26,8 @@ public class SettingsReaderTests
             { @$"{_file2}", new MockFileData(_jsonConfigNoFoldersToCopy) }
 
         });
-        _sut = new SettingsReader(_fileSystem);
+        _logger = new Mock<ILogger<SettingsReader>>();
+        _sut = new SettingsReader(_fileSystem, _logger.Object);
         _sut.FilePath = _file1;
     }
 
@@ -57,7 +49,7 @@ public class SettingsReaderTests
     public void Load_EmptyFile_DeserializationOk()
     {
         //given
-        _sut = new SettingsReader(_fileSystem);
+        _sut = new SettingsReader(_fileSystem,_logger.Object);
         _sut.FilePath = _file2;
 
         //when
