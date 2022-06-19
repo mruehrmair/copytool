@@ -1,5 +1,8 @@
 {
 	"folders": [
-  { "source":"c:\tmp", "destination": "c:\tmp2" }
+    {
+      "source": "C:\\tmp",
+      "destination": "C:\\tmp2"
+    }
 ]
 }
