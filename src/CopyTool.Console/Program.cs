@@ -20,6 +20,7 @@ namespace CopyTool.Console
                 .CreateLogger();
             
             Log.Information("FileCopy starts");
+            
             var settingsFilePath = Path.Combine(Directory.GetCurrentDirectory(), _settingsFileName);
             var service = host.Services.GetService<ICopyOperation>();
 
@@ -27,7 +28,19 @@ namespace CopyTool.Console
 
             if (service is not null)
             {
-                isSuccess = await service.FolderCopy(settingsFilePath);
+                if(args.Count() == 2)
+                {
+                    isSuccess = await service.FolderCopy(args[0], args[1]);
+                }
+                else if (args.Count() == 0)
+                {
+                    isSuccess = await service.FolderCopy(settingsFilePath);
+                }
+                else
+                {
+                    isSuccess = false;
+                    Log.Error("FileCopy could not start. Make sure that either no folder or source folder and destination folder are present.");
+                }
             }
             else
             {

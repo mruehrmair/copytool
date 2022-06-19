@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "CopyTool.Console": {
+      "commandName": "Project"
+    }
+  }
+}
