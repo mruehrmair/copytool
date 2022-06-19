@@ -28,7 +28,6 @@ public class SettingsReaderTests : CopyToolTestsBase
         });
         _logger = new Mock<ILogger<SettingsReader>>();
         _sut = new SettingsReader(_fileSystem, _logger.Object);
-        _sut.FilePath = _file1;
     }
 
     [Fact]
@@ -36,7 +35,7 @@ public class SettingsReaderTests : CopyToolTestsBase
     {
         //given
         //when
-        CopyFolders? settings = _sut.Load<CopyFolders>();
+        CopyFolders? settings = _sut.Load<CopyFolders>(_file1);
 
         //then
         settings.Should().NotBeNull();
@@ -50,10 +49,9 @@ public class SettingsReaderTests : CopyToolTestsBase
     {
         //given
         _sut = new SettingsReader(_fileSystem,_logger.Object);
-        _sut.FilePath = _file2;
-
+        
         //when
-        CopyFolders? settings = _sut.Load<CopyFolders>();
+        CopyFolders? settings = _sut.Load<CopyFolders>(_file2);
 
         //then
         settings.Should().NotBeNull();

@@ -1,8 +1,7 @@
 ﻿namespace CopyTool
 {
     public interface ISettingsReader
-    {
-        public string? FilePath { get; set; }
-        public T? Load<T>() where T : class, new();
+    {       
+        public T? Load<T>(string filePath) where T : class, new();
     }
 }

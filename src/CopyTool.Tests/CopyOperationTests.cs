@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Serilog;
 using Serilog.Extensions.Logging;
-using System;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
 using System.Text.Json;
@@ -17,12 +16,17 @@ public class CopyOperationTests : CopyToolTestsBase
 
     private readonly CopyOperation _sut;
     private readonly Mock<ISettingsReader> _settingsReader;
-    private const string _file1 = @"c:\testfolder\testfile1.txt";
-    private const string _file2 = @"c:\testfolder\testfileCopy.txt";
+    private const string _file1 = @"c:\testfolder1\testfile1.txt";
+    private const string _file1a = @"c:\testfolder2\testfile1.txt";
     private const string _file3 = @"c:\testfolder\testfileCopy3.txt";
     private const string _file4 = @"c:\folder1src\testfileCopy.txt";
     private const string _settingsFile = @"c:\settings.json";
-    private const string _folder1 = @"c:\testfolder";
+    private const string _settingsFileDoesNotExist = @"c:\settingsN.json";
+    private const string _folder1 = @"c:\testfolder1";
+    private const string _folderDoesNotExist = @"c:\testfolderN";
+    private const string _folder2 = @"c:\testfolder2";
+    private const string _folder3 = @"c:\testfolder3";
+    private const string _file2 = @"c:\testfolder3\testfile1.txt";
     private const string _text = "Testing is meh.";
 
     private JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
@@ -35,12 +39,14 @@ public class CopyOperationTests : CopyToolTestsBase
         CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfig, _jsonOptions);
 
         _settingsReader = new Mock<ISettingsReader>();
-        _settingsReader.Setup(x => x.Load<CopyFolders>()).Returns(foldersToCopy);
+        _settingsReader.Setup(x => x.Load<CopyFolders>(It.IsIn( new[] { _settingsFile } ))).Returns(foldersToCopy);
         
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
             { @$"{_folder1}", new MockDirectoryData() },
+            { @$"{_folder3}", new MockDirectoryData() },
             { @$"{_file1}", new MockFileData(_text) },
+            { @$"{_file2}", new MockFileData(_text) },
             { @$"{_file3}", new MockFileData(_text) },
             { @"c:\folder1src", new MockDirectoryData()},
             { @"c:\folder2src", new MockDirectoryData()},
@@ -59,17 +65,32 @@ public class CopyOperationTests : CopyToolTestsBase
     }
 
     [Fact]
-    public async void FileCopy_TwoFiles_CopyOk()
+    public async void FolderCopy_OneFolder_CopyOk()
     {
         //given
-        var testFileSrc = _file1;
-        var testFileDest = _file2;
+        var testFolderSrc = _folder1;
+        var testFolderDest = _folder2;
         //when
-        await _sut.FileCopy(testFileSrc, testFileDest);
+        await _sut.FolderCopy(testFolderSrc, testFolderDest);
         //then
-        var expectedFile = testFileDest;
+        var expectedFile = _file1a;
         _fileSystem.FileExists(expectedFile).Should().Be(true);
 
+    }
+
+    [Fact]
+    public async void FolderCopy_SrcFolderDoesNotExist_CopyFails()
+    {
+        //given
+        var testFolderSrc = _folderDoesNotExist;
+        var testFolderDest = _folder2;
+
+        //when
+        //var action = async () => await _sut.FolderCopy(testFolderSrc, testFolderDest);
+        var result = await _sut.FolderCopy(testFolderSrc, testFolderDest);
+
+        //then
+        result.Should().Be(false);
     }
 
     [Fact]
@@ -87,40 +108,22 @@ public class CopyOperationTests : CopyToolTestsBase
     }
 
     [Fact]
-    public async void FileCopy_DestinationReadOnly_ThrowsException()
+    public async void FolderCopy_DestinationReadOnly_CopyFails()
     {
         //given
-        var testFileSrc = _file1;
-        var testFileDest = _file3;
-
-        var expectedFile = testFileDest;
-        _fileSystem.FileInfo.FromFileName(expectedFile).IsReadOnly = true;
-
-        //when
-        var action = async () => await _sut.FileCopy(testFileSrc, testFileDest);
-
-        //then
-        await action.Should().ThrowAsync<UnauthorizedAccessException>();
-    }
-
-    [Fact]
-    public async void FolderCopy_TwoFolders_CopyOk()
-    {
-        //given
-        const string testFolderSrc = @"c:\testfolder\";
-        const string testFolderDest = @"c:\testfolder1\";
-
-        var foldersToCopy = new CopyFolder(testFolderSrc, testFolderDest);
+        var testFolderSrc = _folder1;
+        var testFolderDest = _folder3;
+                
+        _fileSystem.FileInfo.FromFileName(_file2).IsReadOnly = true;
 
         //when
-        await _sut.FolderCopy(foldersToCopy);
+        var result = await _sut.FolderCopy(testFolderSrc, testFolderDest);
 
         //then
-        string? expectedFolder = testFolderDest;
-        _fileSystem.FileExists(expectedFolder).Should().Be(true);
-
+        result.Should().Be(false); 
+        
     }
-
+       
     [Fact]
     public async void FolderCopy_MultipleFoldersInJson_CopyOk()
     {
@@ -138,16 +141,15 @@ public class CopyOperationTests : CopyToolTestsBase
     }
 
     [Fact]
-    public async void FolderCopy_JsonIsNull_ArgumentNullException()
+    public async void FolderCopy_SettingsFileDoesNotExist_CopyFails()
     {
         //given
-        CopyFolders? foldersToCopy = null;
-
+        
         //when
-        var action = async () => await _sut.FolderCopy(foldersToCopy);
+        var result = await _sut.FolderCopy(_settingsFileDoesNotExist);
 
         //then
-        await action.Should().ThrowAsync<ArgumentNullException>();
-
+        result.Should().Be(false);
+        
     }
 }

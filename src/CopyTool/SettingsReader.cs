@@ -8,9 +8,7 @@ namespace CopyTool
     {
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<SettingsReader> _logger;
-
-        public string? FilePath { get; set; }
-
+                
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -22,15 +20,15 @@ namespace CopyTool
             _logger = logger;
         }
 
-        public T? Load<T>() where T : class, new() => Load(typeof(T)) as T;
+        public T? Load<T>(string filePath) where T : class, new() => Load(typeof(T), filePath) as T;
 
-        private object? Load(Type type)
+        private object? Load(Type type, string filePath)
         {
-            if (!_fileSystem.File.Exists(FilePath))
+            if (!_fileSystem.File.Exists(filePath))
                 return Activator.CreateInstance(type);
 
-            var jsonFile = _fileSystem.File.ReadAllText(FilePath);
-            _logger.LogInformation("Using settings file {jsonFile}", FilePath);
+            var jsonFile = _fileSystem.File.ReadAllText(filePath);
+            _logger.LogInformation("Using settings file {jsonFile}", filePath);
 
             return JsonSerializer.Deserialize(jsonFile, type, _jsonOptions);
         }

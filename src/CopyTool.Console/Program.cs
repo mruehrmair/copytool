@@ -20,14 +20,14 @@ namespace CopyTool.Console
                 .CreateLogger();
             
             Log.Information("FileCopy starts");
-
+            var settingsFilePath = Path.Combine(Directory.GetCurrentDirectory(), _settingsFileName);
             var service = host.Services.GetService<ICopyOperation>();
 
             bool isSuccess = false;
 
             if (service is not null)
             {
-                isSuccess = await service.FileCopy(@"C:\Users\marku\OneDrive\Desktop\roll20.png", @"C:\Users\marku\OneDrive\Desktop\roll21.png");
+                isSuccess = await service.FolderCopy(settingsFilePath);
             }
             else
             {

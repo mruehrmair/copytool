@@ -1,7 +1,5 @@
 {
 	"folders": [
-  { "source":"c:\folder1src", "destination": "c:\folder1dest" },
-  { "source":"c:\folder2src", "destination": "c:\folder2dest" },
-  { "source":"c:\folder3src", "destination": "c:\folder3dest" }
+  { "source":"c:\tmp", "destination": "c:\tmp2" }
 ]
 }
