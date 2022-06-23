@@ -6,7 +6,7 @@ A simple command line tool to copy file directories
 
 >copytool [FolderA] [FolderB]
 
-or
+or using the folders listed in the settings file
 
 >copytool
 
