@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
+using XFS = System.IO.Abstractions.TestingHelpers.MockUnixSupport;
 using System.Text.Json;
 using Xunit;
 
@@ -39,22 +40,22 @@ public class CopyOperationTests : CopyToolTestsBase
         CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfig, _jsonOptions);
 
         _settingsReader = new Mock<ISettingsReader>();
-        _settingsReader.Setup(x => x.Load<CopyFolders>(It.IsIn( new[] { _settingsFile } ))).Returns(foldersToCopy);
+        _settingsReader.Setup(x => x.Load<CopyFolders>(It.IsIn( new[] { XFS.Path(_settingsFile) } ))).Returns(foldersToCopy);
         
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            { @$"{_folder1}", new MockDirectoryData() },
-            { @$"{_folder3}", new MockDirectoryData() },
-            { @$"{_file1}", new MockFileData(_text) },
-            { @$"{_file2}", new MockFileData(_text) },
-            { @$"{_file3}", new MockFileData(_text) },
-            { @"c:\folder1src", new MockDirectoryData()},
-            { @"c:\folder2src", new MockDirectoryData()},
-            { @"c:\folder3src", new MockDirectoryData()},
-            { @$"{_file4}", new MockFileData(_text) },
-            { @$"{_settingsFile}", new MockFileData(_jsonConfig) },
-            { @"c:\demo\jQuery.js", new MockFileData("some js") },
-            { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
+            { XFS.Path(@$"{_folder1}"), new MockDirectoryData() },
+            { XFS.Path(@$"{_folder3}"), new MockDirectoryData() },
+            { XFS.Path(@$"{_file1}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_file2}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_file3}"), new MockFileData(_text) },
+            { XFS.Path(@"c:\folder1src"), new MockDirectoryData()},
+            { XFS.Path(@"c:\folder2src"), new MockDirectoryData()},
+            { XFS.Path(@"c:\folder3src"), new MockDirectoryData()},
+            { XFS.Path(@$"{_file4}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_settingsFile}"), new MockFileData(_jsonConfig) },
+            { XFS.Path(@"c:\demo\jQuery.js"), new MockFileData("some js") },
+            { XFS.Path(@"c:\demo\image.gif"), new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
         var logger = Log.Logger = new LoggerConfiguration()
                 .WriteTo.Debug()
@@ -128,10 +129,10 @@ public class CopyOperationTests : CopyToolTestsBase
     public async void FolderCopy_MultipleFoldersInJson_CopyOk()
     {
         //given
-        var expectedFolders = new[] { @"c:\folder1dest\", @"c:\folder2dest\", @"c:\folder3dest\" };
+        var expectedFolders = new[] { XFS.Path(@"c:\folder1dest\"), XFS.Path(@"c:\folder2dest\"), XFS.Path(@"c:\folder3dest\") };
         
         //when
-        await _sut.FolderCopy(_settingsFile);
+        await _sut.FolderCopy(XFS.Path(_settingsFile));
 
         //then
         foreach(var expectedFolder in expectedFolders)
