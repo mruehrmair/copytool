@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
+using XFS = System.IO.Abstractions.TestingHelpers.MockUnixSupport;
 using System.Text.Json;
 using Xunit;
 
@@ -37,24 +38,25 @@ public class CopyOperationTests : CopyToolTestsBase
     public CopyOperationTests()
     {
         CopyFolders? foldersToCopy = JsonSerializer.Deserialize<CopyFolders>(_jsonConfig, _jsonOptions);
+        foldersToCopy = UpdatePathsToNonWindowsCompatibility(foldersToCopy);
 
         _settingsReader = new Mock<ISettingsReader>();
-        _settingsReader.Setup(x => x.Load<CopyFolders>(It.IsIn( new[] { _settingsFile } ))).Returns(foldersToCopy);
-        
+        _settingsReader.Setup(x => x.Load<CopyFolders>(It.IsIn(new[] { XFS.Path(_settingsFile) }))).Returns(foldersToCopy);
+
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
         {
-            { @$"{_folder1}", new MockDirectoryData() },
-            { @$"{_folder3}", new MockDirectoryData() },
-            { @$"{_file1}", new MockFileData(_text) },
-            { @$"{_file2}", new MockFileData(_text) },
-            { @$"{_file3}", new MockFileData(_text) },
-            { @"c:\folder1src", new MockDirectoryData()},
-            { @"c:\folder2src", new MockDirectoryData()},
-            { @"c:\folder3src", new MockDirectoryData()},
-            { @$"{_file4}", new MockFileData(_text) },
-            { @$"{_settingsFile}", new MockFileData(_jsonConfig) },
-            { @"c:\demo\jQuery.js", new MockFileData("some js") },
-            { @"c:\demo\image.gif", new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
+            { XFS.Path(@$"{_folder1}"), new MockDirectoryData() },
+            { XFS.Path(@$"{_folder3}"), new MockDirectoryData() },
+            { XFS.Path(@$"{_file1}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_file2}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_file3}"), new MockFileData(_text) },
+            { XFS.Path(@"c:\folder1src"), new MockDirectoryData()},
+            { XFS.Path(@"c:\folder2src"), new MockDirectoryData()},
+            { XFS.Path(@"c:\folder3src"), new MockDirectoryData()},
+            { XFS.Path(@$"{_file4}"), new MockFileData(_text) },
+            { XFS.Path(@$"{_settingsFile}"), new MockFileData(_jsonConfig) },
+            { XFS.Path(@"c:\demo\jQuery.js"), new MockFileData("some js") },
+            { XFS.Path(@"c:\demo\image.gif"), new MockFileData(new byte[] { 0x12, 0x34, 0x56, 0xd2 }) }
         });
         var logger = Log.Logger = new LoggerConfiguration()
                 .WriteTo.Debug()
@@ -68,12 +70,12 @@ public class CopyOperationTests : CopyToolTestsBase
     public async void FolderCopy_OneFolder_CopyOk()
     {
         //given
-        var testFolderSrc = _folder1;
-        var testFolderDest = _folder2;
+        var testFolderSrc = XFS.Path(_folder1);
+        var testFolderDest = XFS.Path(_folder2);
         //when
         await _sut.FolderCopy(testFolderSrc, testFolderDest);
         //then
-        var expectedFile = _file1a;
+        var expectedFile = XFS.Path(_file1a);
         _fileSystem.FileExists(expectedFile).Should().Be(true);
 
     }
@@ -82,8 +84,8 @@ public class CopyOperationTests : CopyToolTestsBase
     public async void FolderCopy_SrcFolderDoesNotExist_CopyFails()
     {
         //given
-        var testFolderSrc = _folderDoesNotExist;
-        var testFolderDest = _folder2;
+        var testFolderSrc = XFS.Path(_folderDoesNotExist);
+        var testFolderDest = XFS.Path(_folder2);
 
         //when
         //var action = async () => await _sut.FolderCopy(testFolderSrc, testFolderDest);
@@ -97,7 +99,7 @@ public class CopyOperationTests : CopyToolTestsBase
     public async void FileRead_Ok()
     {
         //given
-        var testFileSrc = _file1;
+        var testFileSrc = XFS.Path(_file1);
 
         //when
         var text = await _fileSystem.File.ReadAllLinesAsync(testFileSrc);
@@ -113,28 +115,28 @@ public class CopyOperationTests : CopyToolTestsBase
         //given
         var testFolderSrc = _folder1;
         var testFolderDest = _folder3;
-                
-        _fileSystem.FileInfo.FromFileName(_file2).IsReadOnly = true;
+
+        _fileSystem.FileInfo.FromFileName(XFS.Path(_file2)).IsReadOnly = true;
 
         //when
         var result = await _sut.FolderCopy(testFolderSrc, testFolderDest);
 
         //then
-        result.Should().Be(false); 
-        
+        result.Should().Be(false);
+
     }
-       
+
     [Fact]
     public async void FolderCopy_MultipleFoldersInJson_CopyOk()
     {
         //given
-        var expectedFolders = new[] { @"c:\folder1dest\", @"c:\folder2dest\", @"c:\folder3dest\" };
-        
+        var expectedFolders = new[] { XFS.Path(@"c:\folder1dest\"), XFS.Path(@"c:\folder2dest\"), XFS.Path(@"c:\folder3dest\") };
+
         //when
-        await _sut.FolderCopy(_settingsFile);
+        await _sut.FolderCopy(XFS.Path(_settingsFile));
 
         //then
-        foreach(var expectedFolder in expectedFolders)
+        foreach (var expectedFolder in expectedFolders)
         {
             _fileSystem.FileExists(expectedFolder).Should().Be(true);
         }
@@ -144,12 +146,12 @@ public class CopyOperationTests : CopyToolTestsBase
     public async void FolderCopy_SettingsFileDoesNotExist_CopyFails()
     {
         //given
-        
+
         //when
         var result = await _sut.FolderCopy(_settingsFileDoesNotExist);
 
         //then
         result.Should().Be(false);
-        
+
     }
 }
